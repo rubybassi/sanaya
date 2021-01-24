@@ -178,8 +178,8 @@ if(document.getElementById('inpFile') !== null){
         $('#alert').toggleClass('alert-hide alert-show');
         setTimeout(function() {
         window.location = `/dashboard/${userId}/history`;
-      }, 3000);  
-      }
+      }, 3000);
+     }  
     });
   });
 }
