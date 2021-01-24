@@ -7,7 +7,6 @@ const mkdirp = require('mkdirp');
 const { nanoid } = require('nanoid');
 const fs = require('fs');
 
-
 // route to load dashboard form page
 router.get('/:userId', (req, res) => {
   res.render('dashboard', {layout:'form'});
@@ -19,7 +18,6 @@ router.post('/:userId', async (req, res) => {
     const userId = req.params.userId;
     const date = new Date().toISOString().split('T')[0];
     const { mood, water, steps, sleep, exercise, calorie, alcohol, coffee } = req.body;
-    console.log(`mood: ${mood} water: ${water} steps: ${steps} sleep: ${sleep} exercise: ${exercise} date :${date}`);
     const user = await orm.Users.findOne({where:{sessionId:userId}, raw :true});
     userQuery.createStress(user.id,mood,sleep,exercise,coffee,date);
     userQuery.createHealth(user.id,water,alcohol,steps,calorie,date);
@@ -37,9 +35,7 @@ router.get('/:userId/message', async (req, res) => {
     const response = await fetch('https://www.affirmations.dev/');
     if (response.ok) {
       const payload = await response.json();
-      console.log(payload);
       const getDataUser = await orm.Users.findOne({where:{sessionId:userId}, raw :true});
-      console.log(getDataUser);
       res.render('message', {layout:'logs', payload, getDataUser});
     }
   } catch(error) {
@@ -48,6 +44,7 @@ router.get('/:userId/message', async (req, res) => {
   }
 });
 
+// route to recieve user image and save to db
 router.post('/:userId/message/', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -80,7 +77,6 @@ router.get('/:userId/mood', async (req, res) => {
     const userId = req.params.userId;
     const user = await orm.Users.findOne({where:{sessionId:userId}, raw :true});
     const getData = await orm.Stress.findAll({where:{usersId:user.id}, raw: true});
-    console.log(getData);
     res.render('mood', { layout:'logs', getData, user });
   } catch(error) {
     console.log(error);
@@ -187,15 +183,22 @@ router.get('/:userId/logout', (req, res) => {
 
 // route for deleting user db and local storage data
 router.delete('/:userId', async (req, res) => {
+ try { 
   const userId = req.params.userId;
-  // DB QUERY TO DELETE USER RECORDS AND GET EMAIL TO ADD TO RESPONSE
   const user = await orm.Users.findOne({where: {sessionId: userId}, raw:true});
   await orm.Image.destroy({where : {usersId: user.id}, raw:true});
   await orm.Health.destroy({where : {usersId: user.id}, raw:true});
   await orm.Stress.destroy({where : {usersId: user.id}, raw:true});
   res.json({ 'userId': userId});
+} catch(error) {
+  console.log(error);
+  res.status(503).json({ success: false, payload: { message: `Sorry, there's been an error processing your request` }});
+}
 });
+
+// route for getting image from db, writing to file and rendering in template
 router.get('/:userId/selfies', async (req,res) => {
+try {  
   const userId = req.params.userId;
   const user = await orm.Users.findOne({where: {sessionId: userId}, raw:true});
   const img = await orm.Image.findAll({where : {usersId: user.id}, raw:true});
@@ -211,6 +214,10 @@ router.get('/:userId/selfies', async (req,res) => {
     );
   }
   res.render('selfie',{layouts : 'logs', img});
+} catch(error) {
+  console.log(error);
+  res.status(503).render('selfie', {layout:'logs', message: 'Unable to fetch data...' });
+} 
 });
 
 module.exports = router;

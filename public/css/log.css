@@ -247,5 +247,12 @@ footer{
     margin:10px;
 }
 
+.alert-hide {
+    display: none;
+}
 
-
+.alert-show {
+    display: block;
+    width: 50%;
+    left: 25%
+}
